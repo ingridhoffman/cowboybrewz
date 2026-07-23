@@ -65,7 +65,7 @@
 
     .headline {
       font-family: "Rokkitt", Georgia, serif;
-      font-weight: 800;
+      font-weight: 400;
       font-size: clamp(1.9rem, 6.2vw, 3.4rem);
       line-height: 1.08;
       color: var(--brown-dark);
@@ -154,6 +154,32 @@
       margin-right: 0.3rem;
     }
 
+    /* ---------- Booking CTA ---------- */
+    .booking {
+      margin-top: clamp(1.75rem, 4vw, 2.75rem);
+    }
+
+    .booking a {
+      display: inline-block;
+      font-family: "Rokkitt", Georgia, serif;
+      font-weight: 700;
+      font-size: clamp(1rem, 2.6vw, 1.2rem);
+      letter-spacing: 0.5px;
+      color: var(--cream);
+      background: var(--brown);
+      text-decoration: none;
+      padding: 0.7rem 1.6rem;
+      border-radius: 999px;
+      box-shadow: 0 4px 14px rgba(59, 42, 30, 0.20);
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+
+    .booking a:hover,
+    .booking a:focus-visible {
+      background: var(--brown-dark);
+      transform: translateY(-1px);
+    }
+
     /* ---------- Footer ---------- */
     footer {
       margin-top: auto;
@@ -190,6 +216,10 @@
         <span class="location">Ritzville, WA</span>
       </article>
     </section>
+
+    <p class="booking">
+      <a href="mailto:rdean@cowboybrewz.com?subject=Booking%20inquiry%20%E2%80%94%20Cowboy%20Brewz">Book us for your next event</a>
+    </p>
   </main>
 
   <footer>
