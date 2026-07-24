@@ -57,6 +57,20 @@ def as_local_date(value) -> dt.date:
     return value  # already a date (all-day event)
 
 
+def clean_location(loc: str) -> str:
+    """Trim Google's full postal addresses down to a tidy 'City, ST'.
+
+    'Davenport, WA 99122, USA' -> 'Davenport, WA'. Venue names without a ZIP
+    (e.g. 'Cowboy Brewz Taproom') are left untouched.
+    """
+    loc = loc.strip()
+    # Drop a trailing country.
+    loc = re.sub(r",?\s*(USA|United States(?: of America)?)\s*$", "", loc, flags=re.I)
+    # Drop a trailing ZIP / ZIP+4.
+    loc = re.sub(r"\s+\d{5}(-\d{4})?\s*$", "", loc)
+    return loc.strip().rstrip(",").strip()
+
+
 def format_date_range(start: dt.date, end_inclusive: dt.date) -> str:
     """Human-friendly date range, e.g. 'Aug 20–22, 2026' or 'Aug 30 – Sep 2, 2026'."""
     s, e = start, end_inclusive
@@ -106,7 +120,7 @@ def parse_events(ics_bytes: bytes):
             continue
 
         name = str(comp.get("SUMMARY", "")).strip()
-        location = str(comp.get("LOCATION", "")).strip()
+        location = clean_location(str(comp.get("LOCATION", "")))
         if not name:
             continue
 
