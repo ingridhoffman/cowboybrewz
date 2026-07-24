@@ -1,0 +1,49 @@
+name: Sync events from Google Calendar
+
+on:
+  # Run hourly to pick up calendar changes.
+  schedule:
+    - cron: "0 * * * *"
+  # Allow running on demand from the Actions tab.
+  workflow_dispatch:
+
+# Prevent overlapping runs from racing on the commit.
+concurrency:
+  group: sync-events
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Sync events into index.html
+        env:
+          CALENDAR_ICS_URL: ${{ secrets.CALENDAR_ICS_URL }}
+        run: python scripts/sync_events.py
+
+      - name: Commit changes if any
+        run: |
+          if [[ -n "$(git status --porcelain index.html)" ]]; then
+            git config user.name "cowboybrewz-bot"
+            git config user.email "actions@github.com"
+            git add index.html
+            git commit -m "Auto-sync events from Google Calendar"
+            git push
+            echo "Committed updated events."
+          else
+            echo "No event changes to commit."
+          fi
