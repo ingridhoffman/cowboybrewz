@@ -35,8 +35,8 @@ END_MARKER = "<!-- EVENTS:END -->"
 # Events are shown/sorted in this timezone (Cowboy Brewz operates in WA).
 LOCAL_TZ = ZoneInfo("America/Los_Angeles")
 
-# How far ahead to expand recurring events.
-HORIZON_DAYS = 400
+# Only show events starting within this many months from today.
+MONTHS_AHEAD = 3
 
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -55,6 +55,20 @@ def as_local_date(value) -> dt.date:
             value = value.replace(tzinfo=LOCAL_TZ)
         return value.astimezone(LOCAL_TZ).date()
     return value  # already a date (all-day event)
+
+
+def add_months(d: dt.date, n: int) -> dt.date:
+    """Return the date n months after d, clamping the day to the month's length."""
+    month_index = d.month - 1 + n
+    year = d.year + month_index // 12
+    month = month_index % 12 + 1
+    # Clamp day (e.g. adding 1 month to Jan 31 -> Feb 28/29).
+    if month == 12:
+        next_month_first = dt.date(year + 1, 1, 1)
+    else:
+        next_month_first = dt.date(year, month + 1, 1)
+    last_day = (next_month_first - dt.timedelta(days=1)).day
+    return dt.date(year, month, min(d.day, last_day))
 
 
 def clean_location(loc: str) -> str:
@@ -90,8 +104,9 @@ def parse_events(ics_bytes: bytes):
     cal = icalendar.Calendar.from_ical(ics_bytes)
 
     today = dt.datetime.now(LOCAL_TZ).date()
+    cutoff = add_months(today, MONTHS_AHEAD)  # only show events starting on/before this
     window_start = dt.datetime.now(LOCAL_TZ)
-    window_end = window_start + dt.timedelta(days=HORIZON_DAYS)
+    window_end = dt.datetime.combine(cutoff, dt.time.max, tzinfo=LOCAL_TZ)
 
     occurrences = recurring_ical_events.of(cal).between(window_start, window_end)
 
@@ -115,8 +130,8 @@ def parse_events(ics_bytes: bytes):
         else:
             end_date = start_date
 
-        # Skip events that have already finished.
-        if end_date < today:
+        # Skip events that have already finished or start beyond the cutoff.
+        if end_date < today or start_date > cutoff:
             continue
 
         name = str(comp.get("SUMMARY", "")).strip()
